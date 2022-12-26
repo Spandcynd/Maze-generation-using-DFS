@@ -4,10 +4,13 @@ const context = mazeNode.getContext('2d')
 let currentCell
 
 class Maze {
-  constructor(size, rows, columns) {
-    this.size = size
+  constructor(height, width, rows, columns) {
+    this.height = height
+    this.width = width
     this.rows = rows
     this.columns = columns
+    this.colWidth = width / columns
+    this.rowHeight = height / rows
     this.grid = []
     this.stack = []
   }
@@ -16,7 +19,7 @@ class Maze {
     for (let r = 0; r < this.rows; r++) {
       const row = []
       for (let c = 0; c < this.columns; c++) {
-        const cell = new Cell(r, c, this.grid, this.size)
+        const cell = new Cell(r, c, this.grid, this.colWidth, this.rowHeight)
         row.push(cell)
       }
       this.grid.push(row)
@@ -25,8 +28,8 @@ class Maze {
   }
 
   draw() {
-    mazeNode.height = this.size
-    mazeNode.width = this.size
+    mazeNode.height = this.height
+    mazeNode.width = this.width
     mazeNode.style.background = 'black'
     currentCell.visited = true
 
@@ -36,14 +39,14 @@ class Maze {
       }
     }
 
-    const nextCell = currentCell.nextRandomNeighbour()
+    const nextCell = currentCell.nextRandomNeighbour(this.columns, this.rows)
 
     if (nextCell) {
       nextCell.visited = true
 
       this.stack.push(currentCell)
 
-      currentCell.highlight(this.columns, this.rows)
+      currentCell.highlight()
 
       currentCell.removeWalls(currentCell, nextCell)
 
@@ -67,11 +70,12 @@ class Maze {
 
 
 class Cell {
-  constructor(rowNum, colNum, parentGrid, parentSize) {
+  constructor(rowNum, colNum, parentGrid, colWidth, rowHeight) {
     this.rowNum = rowNum
     this.colNum = colNum
     this.parentGrid = parentGrid
-    this.parentSize = parentSize
+    this.width = colWidth
+    this.height = rowHeight
     this.visited = false
     this.walls = {
       topWall: true,
@@ -81,15 +85,15 @@ class Cell {
     }
   }
 
-  nextRandomNeighbour() {
+  nextRandomNeighbour(columns, rows) {
     const grid = this.parentGrid
     const col = this.colNum
     const row = this.rowNum
     const neighbours = []
 
     const topNeighbour = row !== 0 ? grid[row - 1][col] : undefined
-    const rightNeighbour = col !== grid.length - 1 ? grid[row][col + 1] : undefined
-    const bottomNeighbour = row !== grid.length - 1 ? grid[row + 1][col] : undefined
+    const rightNeighbour = col !== columns - 1 ? grid[row][col + 1] : undefined
+    const bottomNeighbour = row !== rows - 1 ? grid[row + 1][col] : undefined
     const leftNeighbour = col !== 0 ? grid[row][col - 1] : undefined
 
     if (topNeighbour && !topNeighbour.visited) neighbours.push(topNeighbour)
@@ -105,31 +109,31 @@ class Cell {
     }
   }
 
-  drawTopWall(x, y, size, columns) {
+  drawTopWall(x, y) {
     context.beginPath()
     context.moveTo(x, y)
-    context.lineTo(x + size / columns, y)
+    context.lineTo(x + this.width, y)
     context.stroke()
   }
 
-  drawRightWall(x, y, size, columns, rows) {
+  drawRightWall(x, y) {
     context.beginPath()
-    context.moveTo(x + size / columns, y)
-    context.lineTo(x + size / columns, y + size / rows)
+    context.moveTo(x + this.width, y)
+    context.lineTo(x + this.width, y + this.height)
     context.stroke()
   }
 
-  drawBottomWall(x, y, size, columns, rows) {
+  drawBottomWall(x, y) {
     context.beginPath()
-    context.moveTo(x, y + size / rows)
-    context.lineTo(x + size / columns, y + size / rows)
+    context.moveTo(x, y + this.height)
+    context.lineTo(x + this.width, y + this.height)
     context.stroke()
   }
 
-  drawLeftWall(x, y, size, rows) {
+  drawLeftWall(x, y) {
     context.beginPath()
     context.moveTo(x, y)
-    context.lineTo(x, y + size / rows)
+    context.lineTo(x, y + this.height)
     context.stroke()
   }
 
@@ -155,36 +159,32 @@ class Cell {
     }
   }
 
-  show(size, columns, rows) {
-    const x = this.colNum * size / columns
-    const y = this.rowNum * size / rows
+  show() {
+    const x = this.colNum * this.width
+    const y = this.rowNum * this.height
     
     context.strokeStyle = 'white'
     context.fillStyle = 'black'
     context.lineWidth = 2
 
-    if (this.walls.topWall) this.drawTopWall(x, y, size, columns)
-    if (this.walls.rightWall) this.drawRightWall(x, y, size, columns, rows)
-    if (this.walls.bottomWall) this.drawBottomWall(x, y, size, columns, rows)
-    if (this.walls.leftWall) this.drawLeftWall(x, y, size, rows)
+    if (this.walls.topWall) this.drawTopWall(x, y)
+    if (this.walls.rightWall) this.drawRightWall(x, y)
+    if (this.walls.bottomWall) this.drawBottomWall(x, y)
+    if (this.walls.leftWall) this.drawLeftWall(x, y)
     if (this.visited) {
-      context.fillRect(x + 1, y + 1, size / columns - 2, size / rows - 2)
+      context.fillRect(x + 1, y + 1, this.width - 2, this.height - 2)
     }
   }
 
-  highlight(columns, rows) {
-    const x = this.colNum * this.parentSize / columns + 1
-    const y = this.rowNum * this.parentSize / rows + 1
+  highlight() {
+    const x = this.colNum * this.width + 1
+    const y = this.rowNum * this.height + 1
 
     context.fillStyle = 'purple'
-    context.fillRect(x + 2, y + 2, this.parentSize / columns - 4, this.parentSize / rows - 4)
+    context.fillRect(x + 2, y + 2, this.width - 4, this.height - 4)
   }
 }
 
-// Uncomment only one maze
-const maze = new Maze(500, 5, 5)
-// const maze = new Maze(500, 10, 10)
-// const maze = new Maze(500, 20, 20)
-
+const maze = new Maze(400, 1000, 10, 25)
 maze.setup()
 maze.draw()
