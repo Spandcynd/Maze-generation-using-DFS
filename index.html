@@ -5,10 +5,38 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="style.css">
+  <script src="gameplay.js" defer></script>
   <script src="script.js" defer></script>
+  <script src="settings.js" defer></script>
   <title>Maze game</title>
 </head>
 <body>
-  <canvas class="maze"></canvas>
+  <div class="settings">
+    <div class="header">
+      <h1>Maze game</h1>
+      <p>Choose. Click. Play.</p>
+    </div>
+    <form action="">
+      <div class="form__labels">
+        <label for="size">Size</label>
+        <label for="lines">Lines</label>
+      </div>
+      <div class="form__inputs">
+        <select id="size">
+          <option value="big">big</option>
+          <option value="medium">medium</option>
+          <option value="small">small</option>
+        </select>
+        <input type="text" id="lines" value="10">
+      </div>
+    </form>
+    <div class="go-container">
+      <input type="button" id="go" value="Go!">
+    </div>
+  </div>
+  <div class="playground playground_hidden">
+    <canvas class="maze"></canvas>
+    <input type="button" value="<-- Restart" id="restart">
+  </div>
 </body>
 </html>

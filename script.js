@@ -1,10 +1,10 @@
-const mazeNode = document.querySelector('.maze');
-const context = mazeNode.getContext('2d');
+let maze;
 
 class Maze {
   constructor(size, lines) {
     this.size = size;
     this.lines = lines;
+    this.cellSize = size / lines;
     this.currentCell = undefined;
     this.grid = [];
     this.stack = [];
@@ -14,13 +14,16 @@ class Maze {
     for (let rowNum = 0; rowNum < this.lines; rowNum++) {
       const row = [];
       for (let colNum = 0; colNum < this.lines; colNum++) {
-        const cell = new Cell(rowNum, colNum, this.grid, this.size, this.lines);
+        const cell = new Cell(rowNum, colNum, this.grid, this.cellSize);
         row.push(cell);
       }
       this.grid.push(row);
     }
     this.currentCell = this.grid[0][0];
+    this.grid[0][0].character = true;
     this.grid[this.grid.length - 1][this.grid.length - 1].goal = true;
+
+    character = new Character(this.grid);
   }
 
   removeWalls(cell1, cell2) {
@@ -49,45 +52,56 @@ class Maze {
     mazeNode.height = this.size;
     mazeNode.width = this.size;
     mazeNode.style.background = 'black';
-    this.currentCell.visited = true;
 
     for (let r = 0; r < this.lines; r++) {
       for (let c = 0; c < this.lines; c++) {
         this.grid[r][c].draw();
       }
     }
+  }
 
-    const nextCell = this.currentCell.nextRandomNeighbour();
-
-    if (nextCell) {
-      nextCell.visited = true;
-      this.stack.push(this.currentCell);
-      this.currentCell.highlight();
-      this.removeWalls(this.currentCell, nextCell);
-      this.currentCell = nextCell;
-    } else if (this.stack.length > 0) {
-      const previousCell = this.stack.pop();
-      this.currentCell = previousCell;
-      this.currentCell.highlight();
-    }
-
-    if (this.stack.length === 0) {
-      return;
-    }
-
-    window.requestAnimationFrame(() => {
+  createFrame() {
+    setTimeout(() => {
       this.draw();
-    });
+
+      console.log(this.stack);
+      this.currentCell.visited = true;
+
+      const nextCell = this.currentCell.nextRandomNeighbour();
+
+      if (nextCell) {
+        nextCell.visited = true;
+        this.stack.push(this.currentCell);
+        this.currentCell.highlight('blue');
+        this.removeWalls(this.currentCell, nextCell);
+        this.currentCell = nextCell;
+      } else if (this.stack.length > 0) {
+        const previousCell = this.stack.pop();
+        this.currentCell = previousCell;
+        this.currentCell.highlight('red');
+      } else {
+        return;
+      }
+
+      window.requestAnimationFrame(() => {
+        this.createFrame();
+      });
+    }, 0);
+  }
+
+  refresh() {
+    this.draw();
   }
 }
 
 class Cell {
-  constructor(rowNum, colNum, parentGrid, parentSize, parentLines) {
+  constructor(rowNum, colNum, parentGrid, cellSize) {
     this.row = rowNum;
     this.col = colNum;
     this.parentGrid = parentGrid;
-    this.size = parentSize / parentLines;
+    this.size = cellSize;
     this.visited = false;
+    this.character = false;
     this.goal = false;
     this.walls = {
       top: true,
@@ -166,19 +180,18 @@ class Cell {
       context.fillStyle = 'green';
       context.fillRect(x + 2, y + 2, this.size - 4, this.size - 4);
     }
+
+    if (this.character) {
+      context.fillStyle = 'brown';
+      context.fillRect(x + 2, y + 2, this.size - 4, this.size - 4);
+    }
   }
 
-  highlight() {
+  highlight(color) {
     const x = this.col * this.size;
     const y = this.row * this.size;
 
-    context.fillStyle = '#33aaff';
+    context.fillStyle = color;
     context.fillRect(x + 3, y + 3, this.size - 6, this.size - 6);
   }
 }
-
-const maze = new Maze(500, 20);
-maze.setup();
-maze.draw();
-
-console.log(maze);
